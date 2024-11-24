@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gewicht Tracker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Specifieke styling voor mobiel */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            .form-label {
+                font-size: 0.9rem;
+            }
+            #scaleSelect {
+                width: 100%;
+            }
+            #weightChart {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-4">
+        <!-- Titel -->
+        <div class="text-center mb-4">
+            <h1 class="display-6">Gewicht Tracker</h1>
+            <p class="text-muted">Houd dagelijks je gewicht bij</p>
+        </div>
+
+        <!-- Formulier -->
+        <div class="card shadow-sm p-3 mb-4">
+            <form id="weightForm">
+                <div class="mb-3">
+                    <label for="weight" class="form-label">Gewicht (kg):</label>
+                    <input type="number" step="0.1" name="weight" id="weight" class="form-control" 
+                           value="{{ last_weight }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="date" class="form-label">Datum:</label>
+                    <input type="date" name="date" id="date" class="form-control" 
+                           value="{{ today_1 }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Opslaan</button>
+            </form>
+        </div>
+
+        <!-- 7-Dagen Gemiddelde -->
+        <div class="text-center mb-4">
+            <h3>7-dagen Gemiddelde: <span id="avgWeight">{{ avg_weight | default(0.0) | round(1) }}</span> kg</h3>
+        </div>
+
+        <!-- Schaal Selecteren -->
+        <div class="text-center mb-4">
+            <label for="scaleSelect" class="form-label">Toon gegevens voor:</label>
+            <select id="scaleSelect" class="form-select w-auto d-inline-block">
+                <option value="week">Laatste week</option>
+                <option value="month">Laatste maand</option>
+                <option value="year">Laatste jaar</option>
+            </select>
+        </div>
+
+        <!-- Grafiek -->
+        <div>
+            <canvas id="weightChart"></canvas>
+        </div>
+
+        <!-- Knoppen naar andere pagina's -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('weights') }}" class="btn btn-outline-secondary mb-2">Bekijk en bewerk gewichten</a>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        const weightChartCtx = document.getElementById('weightChart').getContext('2d');
+        let weightChart = new Chart(weightChartCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Gewicht (kg)',
+                    data: [],
+                    borderColor: '#007bff',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Datum' } },
+                    y: { title: { display: true, text: 'Gewicht (kg)' } }
+                }
+            }
+        });
+
+        async function fetchData(scale) {
+            const response = await fetch(`/data?scale=${scale}`);
+            const data = await response.json();
+            const labels = data.map(item => item.date);
+            const weights = data.map(item => item.weight);
+
+            weightChart.data.labels = labels;
+            weightChart.data.datasets[0].data = weights;
+            weightChart.update();
+        }
+
+        document.getElementById('scaleSelect').addEventListener('change', function() {
+            fetchData(this.value);
+        });
+
+        document.getElementById('weightForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            await fetch('/add', { method: 'POST', body: formData });
+            fetchData(document.getElementById('scaleSelect').value);
+        });
+
+        // Initial load
+        fetchData('week');
+    </script>
+</body>
+</html>
