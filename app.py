@@ -98,7 +98,7 @@ def weights():
         return redirect(url_for('weights'))
 
     # Haal alle gewichten uit de database
-    rows = conn.execute('SELECT * FROM weights').fetchall()
+    rows = conn.execute('SELECT * FROM weights ORDER BY date DESC').fetchall()
     conn.close()
 
     return render_template('weights.html', weights=rows)
