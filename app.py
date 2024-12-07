@@ -70,9 +70,9 @@ def get_data():
     if scale == 'week':
         start_date = today - timedelta(days=7)
     elif scale == 'month':
-        start_date = today.replace(day=1)
+        start_date = today - timedelta(days=31)
     elif scale == 'year':
-        start_date = today.replace(month=1, day=1)
+        start_date = today - timedelta(days=365)
     else:
         return jsonify({'error': 'Invalid scale'}), 400
 
