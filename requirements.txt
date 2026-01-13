@@ -1,4 +1,4 @@
 flask
 sqlalchemy
 flask_sqlalchemy
-chart.js
+chart.js --frozen
